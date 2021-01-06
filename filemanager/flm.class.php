@@ -601,11 +601,14 @@ class FLM {
 		header('Pragma: ');
 		header('Content-Type: application/octet-stream');
 
-		header('Content-Disposition: attachment; filename="'.end(explode('/',$file)).'"');
+		$tmp = explode('/', $file);
+		$filename = end($tmp);
+
+		header('Content-Disposition: attachment; filename="'.$filename.'"');
 		header('Content-Transfer-Encoding: binary');
 		header('Content-Description: File Transfer');
 
-		$this->get_file($fpath, ($finfo['size'] >= 2147483647));
+		$this->get_file($fpath, (strlen(decbin(~0)) == 32) ? ($finfo['size'] >= 2147483647) : false);
 
 
 	}
