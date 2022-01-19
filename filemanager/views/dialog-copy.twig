@@ -1,0 +1,83 @@
+{% set pathbrowse = isValidPath(currentPath)? currentPath : '/' %}
+{% set multiselect = 1 %}
+{% set multiselectFilesOnly = false %}
+
+{% extends "flm::dialog-window.twig" %}
+{% block heading %}
+        <legend>{{ theUILang.fDiagCopySel }} </legend>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function (global) {
+    var dialogs = flm.ui.getDialogs();
+    var diagId = dialogs.getDialogId();
+
+
+    if(!flm.manager.hasOwnProperty('doCopy')) {
+        // service
+        flm.manager.doCopy = function (destination, filePaths) {
+
+        destination = $.trim(destination);
+
+        var deferred = $.Deferred();
+        flm.manager.logStart(theUILang.fStarts.copy);
+
+        if (!destination.length) {
+            // flm.manager.logAction('copy', theUILang.fDiagInvalidname);
+            deferred.reject(theUILang.fDiagInvalidname);
+            return deferred.promise();
+        }
+
+        if (!$type(filePaths) || filePaths.length === 0) {
+            deferred.reject('Empty paths');
+            return deferred.promise();
+        }
+
+        if (!flm.utils.isValidPath(destination)) {
+            // flm.manager.logAction('copy', theUILang.fDiagInvalidname);
+            deferred.reject(theUILang.fDiagInvalidname);
+            return deferred.promise();
+        }
+
+        // snapshotvalue
+        var cPath = flm.getCurrentPath();
+        return flm.api.copy(flm.manager.getFullPaths(filePaths), flm.manager.stripHomePath(destination))
+            .then(function (response) {
+                    flm.manager.logAction('copy', filePaths.length + ' files -> ' + destination);
+                    flm.Refresh(cPath);
+                    return response;
+                },
+                function (response) {
+                    return response;
+                });
+    }
+}
+
+    dialogs.onStart(function () {
+        dialogs.disableStartButton();
+        return flm.manager.doCopy(dialogs.getTargetPath(diagId), dialogs.getCheckedList(diagId)).then(
+
+        );
+    });
+
+    var updateName = function(prefix, entry) {
+
+        var path =dialogs.getTargetPath(diagId);
+
+        dialogs.updateTargetPath(diagId, flm.utils.buildPath([flm.utils.basedir(path), prefix + flm.utils.basename(entry)]) );
+    };
+
+    var entries = dialogs.getCheckedList(diagId);
+
+    if(entries.length == 1)
+    {
+        updateName('Copy of ', entries[0]);
+    }
+
+})
+(window);
+</script>
+{% endblock %}
+
+{% set startButtonValue = theUILang.fDiagCopyBut %}
